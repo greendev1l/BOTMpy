@@ -4,7 +4,7 @@
 # Copyright (c) 2012 Berlin Institute of Technology
 # All rights reserved.
 #
-# Developed by:	Philipp Meier <pmeier82@gmail.com>
+# Developed by:    Philipp Meier <pmeier82@gmail.com>
 #               Neural Information Processing Group (NI)
 #               School for Electrical Engineering and Computer Science
 #               Berlin Institute of Technology
@@ -225,7 +225,7 @@ class SpectrumArtifactDetector(ThresholdDetectorNode):
 
     def __init__(self, wsize_ms=8.0, srate=32000.0, cutoff_hz=2000.0, nfft=512, 
                  en_func='max_normed', overlap=1, max_merge_dist = 6, 
-                 min_allowed_length = 2, **kw):
+                 min_allowed_length = 2, psize_ms=(0.0, 0.0),**kw):
         """lala"""
 
         # super
@@ -241,6 +241,8 @@ class SpectrumArtifactDetector(ThresholdDetectorNode):
         self.overlap = overlap # 0- No overlap, 1 - 50% overlap, 2 - 75% overlap
         self.max_merge_dist = max_merge_dist
         self.min_allowed_length = min_allowed_length
+        self.pad = (int(psize_ms[0] * self.srate / 1000.0),
+                    int(psize_ms[1] * self.srate / 1000.0))
         
         while self.nfft < nfft:
             self.nfft <<= 1
@@ -304,6 +306,11 @@ class SpectrumArtifactDetector(ThresholdDetectorNode):
         else:
             epochs = merge_epochs(epochs, min_dist=step * self.max_merge_dist + 1)
             epochs = epochs[epochs[:, 1] - epochs[:, 0] >= step * self.min_allowed_length]
+            
+        if epochs.size > 0:
+            epochs[:, 0] -= self.pad[0]
+            epochs[:, 1] += self.pad[1]
+            
         self.events = sp.asarray(epochs, dtype=INDEX_DTYPE)
         return x
 
